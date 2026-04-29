@@ -1,17 +1,49 @@
 {
   "name": "@supaproxy/providers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Plugin package for SupaProxy AI provider types",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "scripts": { "build": "tsc", "dev": "tsc --watch", "clean": "rm -rf dist", "prepublishOnly": "pnpm build" },
-  "files": ["dist"],
-  "peerDependencies": { "@anthropic-ai/sdk": ">=0.30.0", "openai": ">=4.0.0" },
-  "peerDependenciesMeta": { "@anthropic-ai/sdk": { "optional": true }, "openai": { "optional": true } },
-  "dependencies": { "pino": "^9.0.0" },
-  "devDependencies": { "@anthropic-ai/sdk": "^0.91.1", "openai": "^6.35.0", "@types/node": "^22.0.0", "typescript": "^5.8.0" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm build"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@anthropic-ai/sdk": ">=0.30.0",
+    "openai": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "openai": "^6.35.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/NumstackPtyLtd/supaproxy-providers" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NumstackPtyLtd/supaproxy-providers"
+  }
 }
