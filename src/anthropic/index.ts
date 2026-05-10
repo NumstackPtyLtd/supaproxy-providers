@@ -108,7 +108,7 @@ class AnthropicProviderPlugin implements ProviderPlugin {
     model: string
     maxTokens: number
     system: string
-    tools: AIToolSpec[]
+    tools?: AIToolSpec[]
     messages: AIMessage[]
     apiKey?: string
   }): Promise<AIResponse> {

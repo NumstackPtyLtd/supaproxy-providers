@@ -155,7 +155,7 @@ class OpenAIProviderPlugin implements ProviderPlugin {
     model: string
     maxTokens: number
     system: string
-    tools: AIToolSpec[]
+    tools?: AIToolSpec[]
     messages: AIMessage[]
     apiKey?: string
   }): Promise<AIResponse> {
@@ -215,7 +215,7 @@ class OpenAIProviderPlugin implements ProviderPlugin {
       }
     }
 
-    const tools: OpenAI.ChatCompletionTool[] = params.tools.map(t => ({
+    const tools: OpenAI.ChatCompletionTool[] = (params.tools ?? []).map(t => ({
       type: 'function' as const,
       function: {
         name: t.name,
