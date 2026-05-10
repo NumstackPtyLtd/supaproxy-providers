@@ -124,15 +124,17 @@ class AnthropicProviderPlugin implements ProviderPlugin {
         : m.content as string,
     }))
 
+    const toolDefs = (params.tools ?? []).map(t => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.input_schema as Anthropic.Tool['input_schema'],
+    }))
+
     const response = await client.messages.create({
       model: params.model,
       max_tokens: params.maxTokens,
       system: params.system,
-      tools: params.tools.map(t => ({
-        name: t.name,
-        description: t.description,
-        input_schema: t.input_schema as Anthropic.Tool['input_schema'],
-      })),
+      ...(toolDefs.length > 0 ? { tools: toolDefs } : {}),
       messages: anthropicMessages,
     })
 
