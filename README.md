@@ -246,6 +246,10 @@ registry.register(myPlugin)
 
 See the [SupaProxy contributing guide](https://github.com/NumstackPtyLtd/supaproxy) for development workflow, code standards, and PR process.
 
+## Documentation
+
+Full documentation at [docs.supaproxy.cloud](https://docs.supaproxy.cloud/plugins/providers).
+
 ## License
 
 MIT
