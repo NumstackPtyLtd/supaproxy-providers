@@ -187,8 +187,10 @@ class AnthropicProviderPlugin implements ProviderPlugin {
 
     try {
       const client = this.getClient(apiKey)
+      const testModel = this.models.find(m => m.default)?.id || this.models[0]?.id
+      if (!testModel) { result.error = 'No models configured'; return result }
       await client.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: testModel,
         max_tokens: 5,
         messages: [{ role: 'user', content: 'hi' }],
       })
