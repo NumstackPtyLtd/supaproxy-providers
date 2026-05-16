@@ -59,6 +59,8 @@ class PluginRegistry {
     description: string
     configSchema: ProviderPlugin['configSchema']
     models: ProviderPlugin['models']
+    capabilities?: ProviderPlugin['capabilities']
+    embeddingModels?: ProviderPlugin['embeddingModels']
   }> {
     return this.list().map((p) => ({
       type: p.type,
@@ -66,6 +68,8 @@ class PluginRegistry {
       description: p.description,
       configSchema: p.configSchema,
       models: p.models,
+      capabilities: p.capabilities,
+      embeddingModels: p.embeddingModels,
     }))
   }
 }
