@@ -170,7 +170,7 @@ describe('ProviderPlugin contract', () => {
       system: 'sys',
       messages: [{ role: 'user', content: 'Hi' }],
     })
-    expect(response.action).toBeUndefined()
+    expect((response as unknown as Record<string, unknown>).action).toBeUndefined()
     expect(response.content).toBeDefined()
   })
 

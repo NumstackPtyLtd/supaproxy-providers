@@ -7,6 +7,9 @@ export type {
   AIUsage,
   AIResponse,
   ConfigField,
+  EmbeddingResponse,
+  ProviderModelInfo,
+  ProviderTestResult,
 } from './types.js'
 
 // Registry

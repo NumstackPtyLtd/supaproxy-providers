@@ -93,4 +93,56 @@ export interface ProviderPlugin {
     maxTokens: number
     prompt: string
   }): Promise<string>
+
+  /** Provider capabilities — what this provider can do. */
+  readonly capabilities?: {
+    chat: boolean
+    embedding: boolean
+    listModels: boolean
+    vision?: boolean
+  }
+
+  /** Whether this provider supports embedding. */
+  readonly supportsEmbedding?: boolean
+
+  /** Embedding models available from this provider. */
+  readonly embeddingModels?: Array<{ id: string; label: string; dimensions: number; default?: boolean }>
+
+  /** Generate embeddings. Only available if supportsEmbedding is true. */
+  embed?(params: {
+    apiKey: string
+    model?: string
+    input: string[]
+    dimensions?: number
+  }): Promise<EmbeddingResponse>
+
+  /** List available models from the provider's API. */
+  listModels?(apiKey: string): Promise<ProviderModelInfo[]>
+
+  /** Test the connection and report capabilities. */
+  testConnection?(apiKey: string): Promise<ProviderTestResult>
+}
+
+/** Normalized embedding response. */
+export interface EmbeddingResponse {
+  embeddings: number[][]
+  usage: { tokens: number; cost_usd: number }
+}
+
+/** Model info returned from provider's list models API. */
+export interface ProviderModelInfo {
+  id: string
+  name: string
+  capabilities?: string[]
+  context_window?: number
+  owned_by?: string
+}
+
+/** Result of testing a provider connection. */
+export interface ProviderTestResult {
+  ok: boolean
+  chat: boolean
+  embedding: boolean
+  models?: ProviderModelInfo[]
+  error?: string
 }
