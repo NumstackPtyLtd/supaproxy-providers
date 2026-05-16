@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { TextBlock } from '@anthropic-ai/sdk/resources/messages.js'
-import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage } from '../types.js'
+import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage, ProviderModelInfo, ProviderTestResult } from '../types.js'
 import pino from 'pino'
 
 const log = pino({ name: 'anthropic-provider' })
@@ -77,6 +77,12 @@ class AnthropicProviderPlugin implements ProviderPlugin {
   readonly type = 'anthropic' as const
   readonly name = 'Anthropic'
   readonly description = 'Claude AI models by Anthropic'
+
+  readonly capabilities = {
+    chat: true,
+    embedding: false,
+    listModels: true,
+  }
 
   readonly configSchema = {
     fields: [
@@ -156,6 +162,50 @@ class AnthropicProviderPlugin implements ProviderPlugin {
       .filter((b): b is TextBlock => b.type === 'text')
       .map(b => b.text)
       .join('')
+  }
+
+  async listModels(apiKey: string): Promise<ProviderModelInfo[]> {
+    const client = this.getClient(apiKey)
+    const response = await client.models.list({ limit: 100 })
+    const models: ProviderModelInfo[] = []
+
+    for await (const model of response) {
+      const capabilities: string[] = ['chat']
+      models.push({
+        id: model.id,
+        name: model.display_name || model.id,
+        capabilities,
+        owned_by: 'anthropic',
+      })
+    }
+
+    return models.sort((a, b) => a.id.localeCompare(b.id))
+  }
+
+  async testConnection(apiKey: string): Promise<ProviderTestResult> {
+    const result: ProviderTestResult = { ok: false, chat: false, embedding: false }
+
+    try {
+      const client = this.getClient(apiKey)
+      await client.messages.create({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 5,
+        messages: [{ role: 'user', content: 'hi' }],
+      })
+      result.chat = true
+      result.ok = true
+    } catch (err) {
+      result.error = (err as Error).message
+    }
+
+    // Anthropic does not support embedding
+    result.embedding = false
+
+    try {
+      result.models = await this.listModels(apiKey)
+    } catch { /* models listing is optional */ }
+
+    return result
   }
 }
 

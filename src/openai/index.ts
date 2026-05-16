@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources/chat/completions/completions.js'
-import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage, EmbeddingResponse } from '../types.js'
+import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage, EmbeddingResponse, ProviderModelInfo, ProviderTestResult } from '../types.js'
 import pino from 'pino'
 
 const log = pino({ name: 'openai-provider' })
@@ -132,6 +132,12 @@ class OpenAIProviderPlugin implements ProviderPlugin {
   readonly type = 'openai' as const
   readonly name = 'OpenAI'
   readonly description = 'GPT models by OpenAI'
+
+  readonly capabilities = {
+    chat: true,
+    embedding: true,
+    listModels: true,
+  }
 
   readonly configSchema = {
     fields: [
@@ -275,6 +281,70 @@ class OpenAIProviderPlugin implements ProviderPlugin {
     const cost_usd = (tokens * pricePerMillion) / 1_000_000
 
     return { embeddings, usage: { tokens, cost_usd } }
+  }
+
+  async listModels(apiKey: string): Promise<ProviderModelInfo[]> {
+    const client = this.getClient(apiKey)
+    const response = await client.models.list()
+    const models: ProviderModelInfo[] = []
+
+    for await (const model of response) {
+      // Filter to chat and embedding models only
+      if (model.id.startsWith('gpt-') || model.id.startsWith('text-embedding-') || model.id.startsWith('o1') || model.id.startsWith('o3') || model.id.startsWith('o4')) {
+        const capabilities: string[] = []
+        if (model.id.startsWith('gpt-') || model.id.startsWith('o1') || model.id.startsWith('o3') || model.id.startsWith('o4')) capabilities.push('chat')
+        if (model.id.startsWith('text-embedding-')) capabilities.push('embedding')
+        if (model.id.includes('4o') || model.id.includes('4-turbo')) capabilities.push('vision')
+
+        models.push({
+          id: model.id,
+          name: model.id,
+          capabilities,
+          owned_by: model.owned_by,
+        })
+      }
+    }
+
+    return models.sort((a, b) => a.id.localeCompare(b.id))
+  }
+
+  async testConnection(apiKey: string): Promise<ProviderTestResult> {
+    const result: ProviderTestResult = { ok: false, chat: false, embedding: false }
+
+    try {
+      // Test chat
+      const client = this.getClient(apiKey)
+      await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        max_tokens: 5,
+        messages: [{ role: 'user', content: 'hi' }],
+      })
+      result.chat = true
+    } catch (err) {
+      result.error = `Chat: ${(err as Error).message}`
+    }
+
+    try {
+      // Test embedding
+      const client = this.getClient(apiKey)
+      await client.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: ['test'],
+      })
+      result.embedding = true
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!result.error) result.error = `Embedding: ${msg}`
+      else result.error += ` | Embedding: ${msg}`
+    }
+
+    result.ok = result.chat || result.embedding
+
+    try {
+      result.models = await this.listModels(apiKey)
+    } catch { /* models listing is optional */ }
+
+    return result
   }
 
   async createSimpleMessage(params: { apiKey: string; model: string; maxTokens: number; prompt: string }): Promise<string> {
