@@ -93,4 +93,24 @@ export interface ProviderPlugin {
     maxTokens: number
     prompt: string
   }): Promise<string>
+
+  /** Whether this provider supports embedding. */
+  readonly supportsEmbedding?: boolean
+
+  /** Embedding models available from this provider. */
+  readonly embeddingModels?: Array<{ id: string; label: string; dimensions: number; default?: boolean }>
+
+  /** Generate embeddings. Only available if supportsEmbedding is true. */
+  embed?(params: {
+    apiKey: string
+    model?: string
+    input: string[]
+    dimensions?: number
+  }): Promise<EmbeddingResponse>
+}
+
+/** Normalized embedding response. */
+export interface EmbeddingResponse {
+  embeddings: number[][]
+  usage: { tokens: number; cost_usd: number }
 }

@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources/chat/completions/completions.js'
-import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage } from '../types.js'
+import type { ProviderPlugin, AIMessage, AIToolSpec, AIResponse, AIContentBlock, AIUsage, EmbeddingResponse } from '../types.js'
 import pino from 'pino'
 
 const log = pino({ name: 'openai-provider' })
@@ -17,6 +17,13 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'gpt-4o-mini':     { input: 0.15,  output: 0.60 },
   'gpt-4-turbo':     { input: 10,    output: 30   },
   'gpt-3.5-turbo':   { input: 0.50,  output: 1.50 },
+}
+
+/** Embedding pricing per million tokens. */
+const EMBEDDING_PRICING: Record<string, number> = {
+  'text-embedding-3-small': 0.02,
+  'text-embedding-3-large': 0.13,
+  'text-embedding-ada-002': 0.10,
 }
 
 function resolvePrice(model: string): { input: number; output: number } {
@@ -137,6 +144,13 @@ class OpenAIProviderPlugin implements ProviderPlugin {
     { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
   ]
 
+  readonly supportsEmbedding = true
+
+  readonly embeddingModels = [
+    { id: 'text-embedding-3-small', label: 'Embedding 3 Small', dimensions: 1536, default: true },
+    { id: 'text-embedding-3-large', label: 'Embedding 3 Large', dimensions: 3072 },
+  ]
+
   private client: OpenAI | null = null
   private currentApiKey: string | null = null
 
@@ -238,6 +252,29 @@ class OpenAIProviderPlugin implements ProviderPlugin {
       usage: calculateUsage(params.model, response.usage),
       stop_reason: mapStopReason(choice.finish_reason),
     }
+  }
+
+  async embed(params: { apiKey: string; model?: string; input: string[]; dimensions?: number }): Promise<EmbeddingResponse> {
+    if (params.input.length === 0) return { embeddings: [], usage: { tokens: 0, cost_usd: 0 } }
+
+    const client = this.getClient(params.apiKey)
+    const model = params.model || 'text-embedding-3-small'
+
+    const response = await client.embeddings.create({
+      model,
+      input: params.input,
+      dimensions: params.dimensions,
+    })
+
+    const embeddings = response.data
+      .sort((a, b) => a.index - b.index)
+      .map(d => d.embedding)
+
+    const tokens = response.usage?.total_tokens ?? 0
+    const pricePerMillion = EMBEDDING_PRICING[model] ?? 0.02
+    const cost_usd = (tokens * pricePerMillion) / 1_000_000
+
+    return { embeddings, usage: { tokens, cost_usd } }
   }
 
   async createSimpleMessage(params: { apiKey: string; model: string; maxTokens: number; prompt: string }): Promise<string> {

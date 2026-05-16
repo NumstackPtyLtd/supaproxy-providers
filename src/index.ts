@@ -7,6 +7,7 @@ export type {
   AIUsage,
   AIResponse,
   ConfigField,
+  EmbeddingResponse,
 } from './types.js'
 
 // Registry
